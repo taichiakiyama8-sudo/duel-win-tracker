@@ -1,56 +1,1156 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>デュエプレ 勝率トラッカー</title>
+
 <style>
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb;color:#172033;font-family:system-ui,-apple-system,"Segoe UI","Yu Gothic UI",sans-serif}
-.wrap{max-width:1050px;margin:auto;padding:24px}.card{background:#fff;border:1px solid #dce2ec;border-radius:16px;padding:18px;margin-bottom:16px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.grow{flex:1;min-width:220px}h1{margin:0 0 4px}.muted{color:#687386;font-size:13px}
-input,select,button{font:inherit}input,select{width:100%;min-height:44px;border:1px solid #dce2ec;border-radius:10px;padding:10px 12px;background:#fff}
-button{min-height:42px;border:1px solid #dce2ec;border-radius:10px;padding:9px 14px;background:#fff;cursor:pointer;font-weight:600}
-.primary{background:#315efb;border-color:#315efb;color:#fff}.win{color:#178a50;background:#eaf7f0}.loss,.danger{color:#c93b3b}.loss{background:#fff0f0}.hidden{display:none!important}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.stat{background:#fff;border:1px solid #dce2ec;border-radius:14px;padding:16px}.stat b{display:block;font-size:26px;margin-top:4px}
-.status{padding:10px 12px;border-radius:10px;background:#eef2ff;font-size:13px;margin-bottom:16px}.match{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #eee}
-.actions{display:flex;gap:6px;flex-wrap:wrap}.auth{max-width:600px;margin:50px auto}
-@media(max-width:650px){.wrap{padding:12px}.stats{grid-template-columns:1fr}.match{flex-direction:column;align-items:flex-start}.actions{width:100%}.actions button{flex:1}}
-</style></head>
-<body><div class="wrap">
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f5f7fb;
+  color:#172033;
+  font-family:system-ui,-apple-system,"Segoe UI","Yu Gothic UI",sans-serif
+}
+.wrap{max-width:1050px;margin:auto;padding:24px}
+.card{
+  background:#fff;
+  border:1px solid #dce2ec;
+  border-radius:16px;
+  padding:18px;
+  margin-bottom:16px
+}
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:end
+}
+.grow{flex:1;min-width:220px}
+h1{margin:0 0 4px}
+.muted{color:#687386;font-size:13px}
+
+input,select,button{font:inherit}
+
+input,select{
+  width:100%;
+  min-height:44px;
+  border:1px solid #dce2ec;
+  border-radius:10px;
+  padding:10px 12px;
+  background:#fff
+}
+
+button{
+  min-height:42px;
+  border:1px solid #dce2ec;
+  border-radius:10px;
+  padding:9px 14px;
+  background:#fff;
+  cursor:pointer;
+  font-weight:600
+}
+
+.primary{
+  background:#315efb;
+  border-color:#315efb;
+  color:#fff
+}
+
+.win{
+  color:#178a50;
+  background:#eaf7f0
+}
+
+.loss,.danger{color:#c93b3b}
+.loss{background:#fff0f0}
+
+.hidden{display:none!important}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:16px
+}
+
+.stat{
+  background:#fff;
+  border:1px solid #dce2ec;
+  border-radius:14px;
+  padding:16px
+}
+
+.stat b{
+  display:block;
+  font-size:26px;
+  margin-top:4px
+}
+
+.status{
+  padding:10px 12px;
+  border-radius:10px;
+  background:#eef2ff;
+  font-size:13px;
+  margin-bottom:16px
+}
+
+.match{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  padding:12px 0;
+  border-bottom:1px solid #eee
+}
+
+.actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap
+}
+
+.auth{
+  max-width:600px;
+  margin:50px auto
+}
+
+/* ログインエラー表示 */
+.auth-error{
+  color:#c93b3b;
+  font-size:14px;
+  font-weight:600;
+  margin-top:12px
+}
+
+.auth-success{
+  color:#178a50;
+  font-size:14px;
+  font-weight:600;
+  margin-top:12px
+}
+
+@media(max-width:650px){
+  .wrap{padding:12px}
+  .stats{grid-template-columns:1fr}
+  .match{
+    flex-direction:column;
+    align-items:flex-start
+  }
+  .actions{width:100%}
+  .actions button{flex:1}
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
 <section id="authView" class="card auth">
-<h1>デュエプレ 勝率トラッカー</h1><p class="muted">同じアカウントでPC・スマホの戦績を同期できます。</p>
-<div class="row"><div class="grow"><label>メールアドレス</label><input id="email" type="email"></div><div class="grow"><label>パスワード（6文字以上）</label><input id="password" type="password"></div></div>
-<div class="row" style="margin-top:12px"><button id="login" class="primary">ログイン</button><button id="signup">新規登録</button></div><p id="authMsg" class="muted"></p>
+
+<h1>デュエプレ 勝率トラッカー</h1>
+
+<p class="muted">
+同じアカウントでPC・スマホの戦績を同期できます。
+</p>
+
+<div class="row">
+
+<div class="grow">
+<label>メールアドレス</label>
+<input
+  id="email"
+  type="email"
+  autocomplete="email"
+  placeholder="example@email.com"
+>
+</div>
+
+<div class="grow">
+<label>パスワード（6文字以上）</label>
+<input
+  id="password"
+  type="password"
+  autocomplete="current-password"
+>
+</div>
+
+</div>
+
+<div class="row" style="margin-top:12px">
+<button id="login" class="primary">ログイン</button>
+<button id="signup">新規登録</button>
+</div>
+
+<p id="authMsg" class="muted"></p>
+
 </section>
+
+
 <div id="appView" class="hidden">
-<div class="row" style="justify-content:space-between;align-items:center"><div><h1>デュエプレ 勝率トラッカー</h1><p id="user" class="muted"></p></div><div><span id="sync" class="muted"></span> <button id="logout">ログアウト</button></div></div>
-<div id="status" class="status">読み込み中...</div>
-<section class="card"><div class="row"><div class="grow"><label>使用デッキ</label><select id="deckSelect"></select></div><button id="addDeck" class="primary">＋ 新しいデッキ</button><button id="rename">名前変更</button><button id="deleteDeck" class="danger">デッキ削除</button></div></section>
-<section class="stats"><div class="stat"><span class="muted">総合戦績</span><b id="record">0勝 0敗</b></div><div class="stat"><span class="muted">総合勝率</span><b id="rate">—</b></div><div class="stat"><span class="muted">試合数</span><b id="games">0</b></div></section>
-<section class="card"><form id="matchForm" class="row"><div class="grow"><label>新しい対面</label><input id="matchName" placeholder="例：HADES、ジョラゴン、青魔道具"></div><button class="primary">＋ 対面を追加</button></form></section>
-<section class="card"><strong>対面別戦績</strong><div id="matchList"></div></section>
-<section class="card"><div class="row"><button id="undo">↶ 直前の操作を取り消す</button><button id="reset" class="danger">このデッキの戦績をリセット</button></div><p class="muted">変更するたびにFirebaseへ自動保存します。</p></section>
-</div></div>
+
+<div
+  class="row"
+  style="justify-content:space-between;align-items:center"
+>
+
+<div>
+<h1>デュエプレ 勝率トラッカー</h1>
+<p id="user" class="muted"></p>
+</div>
+
+<div>
+<span id="sync" class="muted"></span>
+<button id="logout">ログアウト</button>
+</div>
+
+</div>
+
+
+<div id="status" class="status">
+読み込み中...
+</div>
+
+
+<section class="card">
+
+<div class="row">
+
+<div class="grow">
+
+<label>使用デッキ</label>
+
+<select id="deckSelect"></select>
+
+</div>
+
+<button id="addDeck" class="primary">
+＋ 新しいデッキ
+</button>
+
+<button id="rename">
+名前変更
+</button>
+
+<button id="deleteDeck" class="danger">
+デッキ削除
+</button>
+
+</div>
+
+</section>
+
+
+<section class="stats">
+
+<div class="stat">
+<span class="muted">総合戦績</span>
+<b id="record">0勝 0敗</b>
+</div>
+
+<div class="stat">
+<span class="muted">総合勝率</span>
+<b id="rate">—</b>
+</div>
+
+<div class="stat">
+<span class="muted">試合数</span>
+<b id="games">0</b>
+</div>
+
+</section>
+
+
+<section class="card">
+
+<form id="matchForm" class="row">
+
+<div class="grow">
+
+<label>新しい対面</label>
+
+<input
+  id="matchName"
+  placeholder="例：HADES、ジョラゴン、青魔道具"
+>
+
+</div>
+
+<button class="primary">
+＋ 対面を追加
+</button>
+
+</form>
+
+</section>
+
+
+<section class="card">
+
+<strong>対面別戦績</strong>
+
+<div id="matchList"></div>
+
+</section>
+
+
+<section class="card">
+
+<div class="row">
+
+<button id="undo">
+↶ 直前の操作を取り消す
+</button>
+
+<button id="reset" class="danger">
+このデッキの戦績をリセット
+</button>
+
+</div>
+
+<p class="muted">
+変更するたびにFirebaseへ自動保存します。
+</p>
+
+</section>
+
+</div>
+</div>
+
+
 <script type="module">
-import{initializeApp}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
-import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-const cfg={apiKey:"AIzaSyBSHiZp532PY7hHGQ-xMbeAh_YEqhUQAaw",authDomain:"duel-win-tracker.firebaseapp.com",projectId:"duel-win-tracker",storageBucket:"duel-win-tracker.firebasestorage.app",messagingSenderId:"487228176882",appId:"1:487228176882:web:34fe1efd563704a557936b"};
-const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),$=x=>document.getElementById(x);
-let uid=null,state={decks:[{id:"d1",name:"メインデッキ",matchups:[]}],active:"d1",history:[]};
-const active=()=>state.decks.find(d=>d.id===state.active)||state.decks[0],pct=(w,l)=>w+l?(100*w/(w+l)).toFixed(1)+"%":"—",id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2);
-function snap(){state.history.push(JSON.stringify({decks:state.decks,active:state.active}));if(state.history.length>100)state.history.shift()}
-async function save(){if(!uid)return;$("sync").textContent="保存中…";try{await setDoc(doc(db,"users",uid),{tracker:state,updatedAt:Date.now()});$("sync").textContent="✓ 同期済み"}catch(e){$("sync").textContent="同期エラー";$("status").textContent=e.message}}
-function render(){let d=active();$("deckSelect").innerHTML="";state.decks.forEach(x=>{let o=document.createElement("option");o.value=x.id;o.textContent=x.name;o.selected=x.id===state.active;$("deckSelect").append(o)});let w=d.matchups.reduce((a,m)=>a+m.wins,0),l=d.matchups.reduce((a,m)=>a+m.losses,0);$("record").textContent=w+"勝 "+l+"敗";$("rate").textContent=pct(w,l);$("games").textContent=w+l;$("matchList").innerHTML="";d.matchups.forEach(m=>{let r=document.createElement("div");r.className="match";let info=document.createElement("div");info.innerHTML="<strong></strong><div class='muted'></div>";info.querySelector("strong").textContent=m.name;info.querySelector("div").textContent=`${m.wins}勝 ${m.losses}敗 ・ ${pct(m.wins,m.losses)}`;let a=document.createElement("div");a.className="actions";[["勝ち +1","win"],["負け +1","loss"],["削除","danger"]].forEach((z,i)=>{let b=document.createElement("button");b.textContent=z[0];b.className=z[1];b.onclick=async()=>{snap();if(i===0)m.wins++;else if(i===1)m.losses++;else d.matchups=d.matchups.filter(x=>x.id!==m.id);render();await save()};a.append(b)});r.append(info,a);$("matchList").append(r)});$("undo").disabled=!state.history.length}
-async function load(){let s=await getDoc(doc(db,"users",uid));if(s.exists()&&s.data().tracker)state=s.data().tracker;else await save();render();$("status").textContent="準備完了。Firebaseと同期しています。"}
-$("signup").onclick=async()=>{try{$("authMsg").textContent="登録中…";await createUserWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("authMsg").textContent="登録できません: "+e.message}};
-$("login").onclick=async()=>{try{$("authMsg").textContent="ログイン中…";await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value)}catch(e){$("authMsg").textContent="ログインできません: "+e.message}};
-$("logout").onclick=()=>signOut(auth);
-onAuthStateChanged(auth,async u=>{if(!u){uid=null;$("authView").classList.remove("hidden");$("appView").classList.add("hidden");return}uid=u.uid;$("authView").classList.add("hidden");$("appView").classList.remove("hidden");$("user").textContent=u.email;try{await load()}catch(e){$("status").textContent="読み込みエラー: "+e.message}});
-$("deckSelect").onchange=async e=>{state.active=e.target.value;render();await save()};
-$("addDeck").onclick=async()=>{let n=prompt("新しいデッキ名");if(!n?.trim())return;snap();let x={id:id(),name:n.trim(),matchups:[]};state.decks.push(x);state.active=x.id;render();await save()};
-$("rename").onclick=async()=>{let n=prompt("新しいデッキ名",active().name);if(!n?.trim())return;snap();active().name=n.trim();render();await save()};
-$("deleteDeck").onclick=async()=>{if(state.decks.length===1)return alert("最後の1デッキは削除できません。");if(!confirm("このデッキを削除しますか？"))return;snap();state.decks=state.decks.filter(d=>d.id!==state.active);state.active=state.decks[0].id;render();await save()};
-$("matchForm").onsubmit=async e=>{e.preventDefault();let n=$("matchName").value.trim();if(!n)return;if(active().matchups.some(m=>m.name.toLowerCase()===n.toLowerCase()))return alert("その対面は登録済みです。");snap();active().matchups.push({id:id(),name:n,wins:0,losses:0});$("matchName").value="";render();await save()};
-$("undo").onclick=async()=>{let p=state.history.pop();if(!p)return;let h=state.history,x=JSON.parse(p);state.decks=x.decks;state.active=x.active;state.history=h;render();await save()};
-$("reset").onclick=async()=>{if(!confirm("現在のデッキの戦績を0に戻しますか？"))return;snap();active().matchups.forEach(m=>{m.wins=0;m.losses=0});render();await save()};
-</script></body></html>
+
+import{
+  initializeApp
+}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+import{
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+import{
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc
+}from"https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+
+const cfg={
+  apiKey:"AIzaSyBSHiZp532PY7hHGQ-xMbeAh_YEqhUQAaw",
+  authDomain:"duel-win-tracker.firebaseapp.com",
+  projectId:"duel-win-tracker",
+  storageBucket:"duel-win-tracker.firebasestorage.app",
+  messagingSenderId:"487228176882",
+  appId:"1:487228176882:web:34fe1efd563704a557936b"
+};
+
+
+const app=initializeApp(cfg);
+const auth=getAuth(app);
+const db=getFirestore(app);
+
+const $=x=>document.getElementById(x);
+
+
+let uid=null;
+
+let state={
+  decks:[
+    {
+      id:"d1",
+      name:"メインデッキ",
+      matchups:[]
+    }
+  ],
+  active:"d1",
+  history:[]
+};
+
+
+const active=()=>
+  state.decks.find(d=>d.id===state.active)
+  ||state.decks[0];
+
+
+const pct=(w,l)=>
+  w+l
+  ?(100*w/(w+l)).toFixed(1)+"%"
+  :"—";
+
+
+const id=()=>
+  Date.now().toString(36)
+  +Math.random().toString(36).slice(2);
+
+
+/* =========================
+   Firebaseエラー日本語化
+========================= */
+
+function firebaseErrorMessage(error){
+
+  const code=error?.code||"";
+
+  switch(code){
+
+    case "auth/invalid-email":
+      return "正しいメールアドレスを入力してください。";
+
+    case "auth/missing-email":
+      return "メールアドレスを入力してください。";
+
+    case "auth/missing-password":
+      return "パスワードを入力してください。";
+
+    case "auth/weak-password":
+      return "パスワードは6文字以上で入力してください。";
+
+    case "auth/email-already-in-use":
+      return "このメールアドレスはすでに登録されています。ログインしてください。";
+
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+      return "メールアドレスまたはパスワードが違います。";
+
+    case "auth/user-disabled":
+      return "このアカウントは現在利用できません。";
+
+    case "auth/too-many-requests":
+      return "ログイン試行回数が多すぎます。しばらく時間をおいてからもう一度お試しください。";
+
+    case "auth/network-request-failed":
+      return "通信エラーが発生しました。インターネット接続を確認してください。";
+
+    case "auth/operation-not-allowed":
+      return "現在、新規登録またはログインを利用できません。";
+
+    default:
+      console.error("Firebase error:",error);
+      return "エラーが発生しました。もう一度お試しください。";
+  }
+}
+
+
+/* =========================
+   履歴
+========================= */
+
+function snap(){
+
+  state.history.push(
+    JSON.stringify({
+      decks:state.decks,
+      active:state.active
+    })
+  );
+
+  if(state.history.length>100){
+    state.history.shift();
+  }
+}
+
+
+/* =========================
+   Firebase保存
+========================= */
+
+async function save(){
+
+  if(!uid)return;
+
+  $("sync").textContent="保存中…";
+
+  try{
+
+    await setDoc(
+      doc(db,"users",uid),
+      {
+        tracker:state,
+        updatedAt:Date.now()
+      }
+    );
+
+    $("sync").textContent="✓ 同期済み";
+
+  }catch(e){
+
+    console.error(e);
+
+    $("sync").textContent="同期エラー";
+
+    $("status").textContent=
+      "戦績を保存できませんでした。通信状態を確認してください。";
+
+  }
+}
+
+
+/* =========================
+   画面表示
+========================= */
+
+function render(){
+
+  let d=active();
+
+  $("deckSelect").innerHTML="";
+
+  state.decks.forEach(x=>{
+
+    let o=document.createElement("option");
+
+    o.value=x.id;
+    o.textContent=x.name;
+    o.selected=x.id===state.active;
+
+    $("deckSelect").append(o);
+
+  });
+
+
+  let w=d.matchups.reduce(
+    (a,m)=>a+m.wins,
+    0
+  );
+
+  let l=d.matchups.reduce(
+    (a,m)=>a+m.losses,
+    0
+  );
+
+
+  $("record").textContent=
+    w+"勝 "+l+"敗";
+
+  $("rate").textContent=
+    pct(w,l);
+
+  $("games").textContent=
+    w+l;
+
+
+  $("matchList").innerHTML="";
+
+
+  d.matchups.forEach(m=>{
+
+    let r=document.createElement("div");
+
+    r.className="match";
+
+
+    let info=document.createElement("div");
+
+    info.innerHTML=
+      "<strong></strong><div class='muted'></div>";
+
+
+    info.querySelector("strong").textContent=
+      m.name;
+
+
+    info.querySelector("div").textContent=
+      `${m.wins}勝 ${m.losses}敗 ・ ${pct(m.wins,m.losses)}`;
+
+
+    let a=document.createElement("div");
+
+    a.className="actions";
+
+
+    [
+      ["勝ち +1","win"],
+      ["負け +1","loss"],
+      ["削除","danger"]
+
+    ].forEach((z,i)=>{
+
+      let b=document.createElement("button");
+
+      b.textContent=z[0];
+
+      b.className=z[1];
+
+
+      b.onclick=async()=>{
+
+        snap();
+
+        if(i===0){
+
+          m.wins++;
+
+        }else if(i===1){
+
+          m.losses++;
+
+        }else{
+
+          d.matchups=
+            d.matchups.filter(
+              x=>x.id!==m.id
+            );
+
+        }
+
+        render();
+
+        await save();
+
+      };
+
+
+      a.append(b);
+
+    });
+
+
+    r.append(info,a);
+
+    $("matchList").append(r);
+
+  });
+
+
+  $("undo").disabled=
+    !state.history.length;
+
+}
+
+
+/* =========================
+   Firebase読み込み
+========================= */
+
+async function load(){
+
+  let s=
+    await getDoc(
+      doc(db,"users",uid)
+    );
+
+
+  if(
+    s.exists()
+    &&
+    s.data().tracker
+  ){
+
+    state=s.data().tracker;
+
+  }else{
+
+    await save();
+
+  }
+
+
+  render();
+
+
+  $("status").textContent=
+    "準備完了。Firebaseと同期しています.";
+
+}
+
+
+/* =========================
+   新規登録
+========================= */
+
+$("signup").onclick=async()=>{
+
+  const email=
+    $("email").value.trim();
+
+  const password=
+    $("password").value;
+
+
+  $("authMsg").className="muted";
+
+
+  if(!email){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "メールアドレスを入力してください。";
+
+    return;
+
+  }
+
+
+  if(!password){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "パスワードを入力してください。";
+
+    return;
+
+  }
+
+
+  if(password.length<6){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "パスワードは6文字以上で入力してください。";
+
+    return;
+
+  }
+
+
+  try{
+
+    $("authMsg").className="muted";
+
+    $("authMsg").textContent=
+      "アカウントを作成しています…";
+
+
+    await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+
+    $("authMsg").className="auth-success";
+
+    $("authMsg").textContent=
+      "アカウントを作成しました。";
+
+
+  }catch(e){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      firebaseErrorMessage(e);
+
+  }
+
+};
+
+
+/* =========================
+   ログイン
+========================= */
+
+$("login").onclick=async()=>{
+
+  const email=
+    $("email").value.trim();
+
+  const password=
+    $("password").value;
+
+
+  if(!email){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "メールアドレスを入力してください。";
+
+    return;
+
+  }
+
+
+  if(!password){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "パスワードを入力してください。";
+
+    return;
+
+  }
+
+
+  try{
+
+    $("authMsg").className="muted";
+
+    $("authMsg").textContent=
+      "ログインしています…";
+
+
+    await signInWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+
+
+  }catch(e){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      firebaseErrorMessage(e);
+
+  }
+
+};
+
+
+/* =========================
+   ログアウト
+========================= */
+
+$("logout").onclick=()=>{
+
+  signOut(auth);
+
+};
+
+
+/* =========================
+   ログイン状態監視
+========================= */
+
+onAuthStateChanged(
+  auth,
+  async u=>{
+
+    if(!u){
+
+      uid=null;
+
+      $("authView")
+        .classList.remove("hidden");
+
+      $("appView")
+        .classList.add("hidden");
+
+      $("authMsg").textContent="";
+
+      return;
+
+    }
+
+
+    uid=u.uid;
+
+
+    $("authView")
+      .classList.add("hidden");
+
+    $("appView")
+      .classList.remove("hidden");
+
+
+    $("user").textContent=
+      u.email;
+
+
+    try{
+
+      await load();
+
+    }catch(e){
+
+      console.error(e);
+
+      $("status").textContent=
+        "戦績データを読み込めませんでした。";
+
+    }
+
+  }
+);
+
+
+/* =========================
+   デッキ変更
+========================= */
+
+$("deckSelect").onchange=
+async e=>{
+
+  state.active=
+    e.target.value;
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   デッキ追加
+========================= */
+
+$("addDeck").onclick=
+async()=>{
+
+  let n=
+    prompt(
+      "新しいデッキ名"
+    );
+
+
+  if(!n?.trim())return;
+
+
+  snap();
+
+
+  let x={
+
+    id:id(),
+
+    name:n.trim(),
+
+    matchups:[]
+
+  };
+
+
+  state.decks.push(x);
+
+  state.active=x.id;
+
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   名前変更
+========================= */
+
+$("rename").onclick=
+async()=>{
+
+  let n=
+    prompt(
+      "新しいデッキ名",
+      active().name
+    );
+
+
+  if(!n?.trim())return;
+
+
+  snap();
+
+
+  active().name=
+    n.trim();
+
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   デッキ削除
+========================= */
+
+$("deleteDeck").onclick=
+async()=>{
+
+  if(
+    state.decks.length===1
+  ){
+
+    return alert(
+      "最後の1デッキは削除できません。"
+    );
+
+  }
+
+
+  if(
+    !confirm(
+      "このデッキを削除しますか？"
+    )
+  )return;
+
+
+  snap();
+
+
+  state.decks=
+    state.decks.filter(
+      d=>d.id!==state.active
+    );
+
+
+  state.active=
+    state.decks[0].id;
+
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   対面追加
+========================= */
+
+$("matchForm").onsubmit=
+async e=>{
+
+  e.preventDefault();
+
+
+  let n=
+    $("matchName")
+      .value
+      .trim();
+
+
+  if(!n)return;
+
+
+  if(
+    active()
+      .matchups
+      .some(
+        m=>
+          m.name.toLowerCase()
+          ===
+          n.toLowerCase()
+      )
+  ){
+
+    return alert(
+      "その対面は登録済みです。"
+    );
+
+  }
+
+
+  snap();
+
+
+  active()
+    .matchups
+    .push({
+
+      id:id(),
+
+      name:n,
+
+      wins:0,
+
+      losses:0
+
+    });
+
+
+  $("matchName").value="";
+
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   取り消し
+========================= */
+
+$("undo").onclick=
+async()=>{
+
+  let p=
+    state.history.pop();
+
+
+  if(!p)return;
+
+
+  let h=
+    state.history;
+
+
+  let x=
+    JSON.parse(p);
+
+
+  state.decks=
+    x.decks;
+
+  state.active=
+    x.active;
+
+  state.history=
+    h;
+
+
+  render();
+
+  await save();
+
+};
+
+
+/* =========================
+   戦績リセット
+========================= */
+
+$("reset").onclick=
+async()=>{
+
+  if(
+    !confirm(
+      "現在のデッキの戦績を0に戻しますか？"
+    )
+  )return;
+
+
+  snap();
+
+
+  active()
+    .matchups
+    .forEach(
+      m=>{
+        m.wins=0;
+        m.losses=0;
+      }
+    );
+
+
+  render();
+
+  await save();
+
+};
+
+</script>
+
+</body>
+</html>
