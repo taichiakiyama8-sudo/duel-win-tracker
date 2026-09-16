@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>デュエプレ 勝率トラッカー</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#687386;--line:#dce2ec;--accent:#315efb;--green:#178a50;--red:#c93b3b}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","Yu Gothic UI",sans-serif;background:var(--bg);color:var(--text)}
+.wrap{max-width:1050px;margin:auto;padding:24px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}.grow{flex:1;min-width:220px}h1{margin:0 0 4px}.sub,.notice{color:var(--muted);font-size:13px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}.stat b{display:block;font-size:26px;margin-top:4px}label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}input,select,button{font:inherit}input,select{width:100%;min-height:44px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}button{min-height:42px;border:1px solid var(--line);border-radius:10px;padding:9px 14px;background:#fff;cursor:pointer;font-weight:600}.primary{background:var(--accent);border-color:var(--accent);color:#fff}.win{color:var(--green);background:#eaf7f0}.loss{color:var(--red);background:#fff0f0}.danger{color:var(--red)}.hidden{display:none!important}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;min-width:700px}th,td{padding:11px 9px;border-bottom:1px solid var(--line);text-align:left}th{font-size:13px;color:var(--muted)}.num{text-align:right}.actions{display:flex;gap:6px;justify-content:flex-end}.empty{text-align:center;color:var(--muted);padding:24px}.status{padding:10px 12px;border-radius:10px;background:#eef2ff;font-size:13px;margin-bottom:16px}.bar{height:8px;background:#edf0f5;border-radius:999px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent)}
+@media(max-width:650px){.wrap{padding:12px}.stats{grid-template-columns:1fr}.card{padding:14px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>デュエプレ 勝率トラッカー</h1>
+  <p class="sub">デッキごと・対面ごとの勝敗を保存して自動集計</p>
+  <div id="status" class="status">起動しました。</div>
+
+  <section class="card">
+    <div class="row">
+      <div class="grow"><label>使用デッキ</label><select id="deckSelect"></select></div>
+      <button id="showAddDeck" class="primary" type="button">＋ 新しいデッキ</button>
+      <button id="showRename" type="button">名前変更</button>
+      <button id="deleteDeck" class="danger" type="button">デッキ削除</button>
+    </div>
+    <div id="deckEditor" class="row hidden" style="margin-top:12px">
+      <div class="grow"><label id="deckEditorLabel">デッキ名</label><input id="deckNameInput" maxlength="50"></div>
+      <button id="saveDeckEdit" class="primary" type="button">保存</button>
+      <button id="cancelDeckEdit" type="button">キャンセル</button>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat"><span class="sub">総合戦績</span><b id="record">0勝 0敗</b></div>
+    <div class="stat"><span class="sub">総合勝率</span><b id="rate">—</b></div>
+    <div class="stat"><span class="sub">試合数</span><b id="games">0</b></div>
+  </section>
+
+  <section class="card">
+    <form id="addMatchupForm" class="row">
+      <div class="grow"><label>新しい対面</label><input id="matchupName" maxlength="50" placeholder="例：HADES、ジョラゴン、青魔道具"></div>
+      <button class="primary" type="submit">＋ 対面を追加</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <strong>対面別戦績</strong>
+    <div class="tablewrap" style="margin-top:8px">
+      <table><thead><tr><th>対面</th><th class="num">勝</th><th class="num">負</th><th class="num">試合</th><th>勝率</th><th class="num">操作</th></tr></thead><tbody id="matchupBody"></tbody></table>
+      <div id="empty" class="empty">まだ対面がありません。</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <button id="undo" type="button">↶ 直前の操作を取り消す</button>
+      <button id="resetDeck" class="danger" type="button">このデッキの戦績をリセット</button>
+      <button id="exportJson" type="button">バックアップ</button>
+      <button id="importJson" type="button">復元</button>
+      <button id="exportCsv" type="button">CSV出力</button>
+      <input id="fileInput" type="file" accept="application/json,.json" class="hidden">
+    </div>
+    <p id="storageNote" class="notice"></p>
+  </section>
+</div>
+<script>
+(function(){
+'use strict';
+const KEY='duelWinTracker.v2';
+const $=id=>document.getElementById(id);
+const status=$('status');
+let storageOK=true;
+function setStatus(msg){status.textContent=msg;}
+function id(){return (globalThis.crypto&&typeof crypto.randomUUID==='function')?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);}
+function readStore(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null;}catch(e){storageOK=false;return null;}}
+function writeStore(){try{localStorage.setItem(KEY,JSON.stringify(state));storageOK=true;}catch(e){storageOK=false;} $('storageNote').textContent=storageOK?'データはこのブラウザに自動保存されます。':'この表示環境では自動保存が使えません。WindowsのEdge/ChromeでHTMLファイルを開くと保存できます。';}
+let state=readStore()||{decks:[{id:id(),name:'メインデッキ',matchups:[]}],active:null,history:[]};
+if(!Array.isArray(state.decks)||!state.decks.length) state={decks:[{id:id(),name:'メインデッキ',matchups:[]}],active:null,history:[]};
+if(!state.active||!state.decks.some(d=>d.id===state.active)) state.active=state.decks[0].id;
+if(!Array.isArray(state.history)) state.history=[];
+function active(){return state.decks.find(d=>d.id===state.active);}
+function pct(w,l){const n=w+l;return n?(w/n*100).toFixed(1)+'%':'—';}
+function snapshot(){state.history.push(JSON.stringify({decks:state.decks,active:state.active}));if(state.history.length>100)state.history.shift();}
+function render(){
+ const d=active();
+ $('deckSelect').innerHTML='';
+ state.decks.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.name;o.selected=x.id===state.active;$('deckSelect').appendChild(o);});
+ const w=d.matchups.reduce((a,m)=>a+(Number(m.wins)||0),0),l=d.matchups.reduce((a,m)=>a+(Number(m.losses)||0),0);
+ $('record').textContent=w+'勝 '+l+'敗';$('rate').textContent=pct(w,l);$('games').textContent=String(w+l);
+ $('matchupBody').innerHTML='';
+ $('empty').classList.toggle('hidden',d.matchups.length>0);
+ d.matchups.forEach(m=>{
+   const tr=document.createElement('tr');tr.dataset.id=m.id;
+   const total=m.wins+m.losses,p=total?(m.wins/total*100):0;
+   tr.innerHTML='<td><strong></strong></td><td class="num"></td><td class="num"></td><td class="num"></td><td><div class="pct"></div><div class="bar"><i></i></div></td><td><div class="actions"><button type="button" class="win" data-act="win">勝ち +1</button><button type="button" class="loss" data-act="loss">負け +1</button><button type="button" data-act="del">削除</button></div></td>';
+   tr.querySelector('strong').textContent=m.name;const nums=tr.querySelectorAll('.num');nums[0].textContent=m.wins;nums[1].textContent=m.losses;nums[2].textContent=total;tr.querySelector('.pct').textContent=pct(m.wins,m.losses);tr.querySelector('.bar i').style.width=p+'%';$('matchupBody').appendChild(tr);
+ });
+ $('undo').disabled=state.history.length===0;writeStore();
+}
+let editMode=null;
+function openEditor(mode){editMode=mode;const d=active();$('deckEditor').classList.remove('hidden');$('deckEditorLabel').textContent=mode==='add'?'新しいデッキ名':'変更後のデッキ名';$('deckNameInput').value=mode==='add'?'':d.name;$('deckNameInput').focus();}
+$('showAddDeck').addEventListener('click',()=>openEditor('add'));
+$('showRename').addEventListener('click',()=>openEditor('rename'));
+$('cancelDeckEdit').addEventListener('click',()=>{$('deckEditor').classList.add('hidden');editMode=null;});
+$('saveDeckEdit').addEventListener('click',()=>{const name=$('deckNameInput').value.trim();if(!name){setStatus('デッキ名を入力してください。');return;}snapshot();if(editMode==='add'){const newId=id();state.decks.push({id:newId,name,matchups:[]});state.active=newId;setStatus('新しいデッキ「'+name+'」を作成しました。');}else{active().name=name;setStatus('デッキ名を変更しました。');}$('deckEditor').classList.add('hidden');editMode=null;render();});
+$('deckSelect').addEventListener('change',e=>{state.active=e.target.value;setStatus('デッキを切り替えました。');render();});
+$('deleteDeck').addEventListener('click',()=>{if(state.decks.length===1){setStatus('最後の1デッキは削除できません。');return;}snapshot();const n=active().name;state.decks=state.decks.filter(d=>d.id!==state.active);state.active=state.decks[0].id;setStatus('「'+n+'」を削除しました。直前の操作を取り消すで戻せます。');render();});
+$('addMatchupForm').addEventListener('submit',e=>{e.preventDefault();const name=$('matchupName').value.trim(),d=active();if(!name){setStatus('対面名を入力してください。');return;}if(d.matchups.some(m=>m.name.toLowerCase()===name.toLowerCase())){setStatus('その対面はすでに登録されています。');return;}snapshot();d.matchups.push({id:id(),name,wins:0,losses:0});$('matchupName').value='';setStatus('「'+name+'」を追加しました。');render();});
+$('matchupBody').addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const tr=btn.closest('tr'),m=active().matchups.find(x=>x.id===tr.dataset.id);if(!m)return;snapshot();const a=btn.dataset.act;if(a==='win'){m.wins++;setStatus(m.name+'：勝ちを追加しました。');}else if(a==='loss'){m.losses++;setStatus(m.name+'：負けを追加しました。');}else if(a==='del'){active().matchups=active().matchups.filter(x=>x.id!==m.id);setStatus('「'+m.name+'」を削除しました。');}render();});
+$('undo').addEventListener('click',()=>{const prev=state.history.pop();if(!prev)return;const remaining=state.history;const p=JSON.parse(prev);state.decks=p.decks;state.active=p.active;state.history=remaining;setStatus('直前の操作を取り消しました。');render();});
+$('resetDeck').addEventListener('click',()=>{snapshot();active().matchups.forEach(m=>{m.wins=0;m.losses=0;});setStatus('現在のデッキの勝敗を0に戻しました。対面名は残しています。');render();});
+function download(name,text,type){try{const b=new Blob([text],{type:type}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1000);setStatus(name+' を出力しました。');}catch(e){setStatus('ファイル出力に失敗しました。Edge/Chromeで開いて試してください。');}}
+$('exportJson').addEventListener('click',()=>download('duel-win-tracker-backup.json',JSON.stringify({version:2,decks:state.decks,active:state.active},null,2),'application/json'));
+$('importJson').addEventListener('click',()=>$('fileInput').click());
+$('fileInput').addEventListener('change',async e=>{const f=e.target.files&&e.target.files[0];if(!f)return;try{const x=JSON.parse(await f.text());if(!Array.isArray(x.decks)||!x.decks.length)throw new Error('bad');snapshot();state.decks=x.decks;state.active=(x.active&&x.decks.some(d=>d.id===x.active))?x.active:x.decks[0].id;setStatus('バックアップを復元しました。');render();}catch(err){setStatus('バックアップを読み込めませんでした。');}e.target.value='';});
+$('exportCsv').addEventListener('click',()=>{const rows=[['デッキ','対面','勝','負','試合数','勝率']];state.decks.forEach(d=>d.matchups.forEach(m=>rows.push([d.name,m.name,m.wins,m.losses,m.wins+m.losses,pct(m.wins,m.losses)])));const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');download('duel-win-tracker.csv',csv,'text/csv;charset=utf-8');});
+render();setStatus('準備完了。ボタンを押して使えます。');
+})();
+</script>
+</body>
+</html>
