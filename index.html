@@ -182,6 +182,7 @@ button{
 <div class="row" style="margin-top:12px">
 <button id="login" class="primary">ログイン</button>
 <button id="signup">新規登録</button>
+<button id="resetPassword">パスワードを忘れた方</button>
 </div>
 
 <p id="authMsg" class="muted"></p>
@@ -331,6 +332,7 @@ import{
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut
 }from"https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
@@ -810,6 +812,52 @@ $("login").onclick=async()=>{
 
 };
 
+/* =========================
+   パスワード再設定
+========================= */
+
+$("resetPassword").onclick=async()=>{
+
+  const email=
+    $("email").value.trim();
+
+  if(!email){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      "パスワードを再設定するメールアドレスを入力してください。";
+
+    return;
+  }
+
+  try{
+
+    $("authMsg").className="muted";
+
+    $("authMsg").textContent=
+      "パスワード再設定メールを送信しています…";
+
+    await sendPasswordResetEmail(
+      auth,
+      email
+    );
+
+    $("authMsg").className="auth-success";
+
+    $("authMsg").textContent=
+      "パスワード再設定メールを送信しました。メールを確認してください。";
+
+  }catch(e){
+
+    $("authMsg").className="auth-error";
+
+    $("authMsg").textContent=
+      firebaseErrorMessage(e);
+
+  }
+
+};
 
 /* =========================
    ログアウト
